@@ -19,7 +19,7 @@
 		"node-livejournal": "git://github.com/agentcooper/node-livejournal.git",
 		"xmlrpc": "git://github.com/agentcooper/node-xmlrpc.git",
 
-		"xmldom": "*"
+		"cheerio": "*"
 	},
 	"private": true
 }

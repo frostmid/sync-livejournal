@@ -11,7 +11,6 @@ var	_ = require ('lodash'),
 		//'http://192.168.104.254:8001'
 	;
 
-//TODO:: отсекание &#234 в комментах
 function normalizeURL (url) {
 	var tmp = url.match(/http:\/\/(.+).livejournal.com(\/?(.+))?/),
 		subDomain = tmp [1],
@@ -29,6 +28,8 @@ function normalizeURL (url) {
         }
 	}
 
+	url = url.replace(/&?#.*$/, '');
+
 	return url;
 };
 
@@ -39,7 +40,19 @@ var parse = {
 			'entry-type': 'urn:fos:sync:entry-type/62c4870f3c8a6aee0dd7e88e9e55958d',
 			'first-name': entry.fullname,
 			'nickname': entry.username,
-			'content': entry.message
+			'content': entry.message || null,
+			'avatar': entry.avatar || null,
+			'birth-date': entry['birth-date'] || null,
+			'city': entry.city || null,
+			'site': entry.site || null,
+			'email': entry.email || null,
+			'facebook': entry.facebook || null,
+			'twitter': entry.twitter || null,
+			'vk': entry.vk || null,
+			'ljtalk': entry.ljtalk || null,
+			'icq': entry.icq || null,
+			'google': entry.google || null,
+			'skype': entry.skype || null
 		};
 	},
 

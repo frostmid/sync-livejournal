@@ -2,7 +2,8 @@ var	_ = require ('lodash'),
 	Promises = require ('vow'),
 	request = require ('fos-request'),
 	xmlrpc = require('xmlrpc'),
-	moment = require('moment');
+	moment = require('moment'),
+	cheerio = require('cheerio');
 
 
 module.exports = function LiveJournal (settings) {
@@ -36,6 +37,8 @@ _.extend (module.exports.prototype, {
 				}
 	        }
 		}
+
+		url = url.replace(/&?#.*$/, '');
 
 		return url;
 	},
@@ -107,14 +110,14 @@ _.extend (module.exports.prototype, {
 			}, this));
 	},
 
-	//TODO:: commentId
 	reply: function (url, message, issue) {
 		var self = this,
 			tmp = url.match(/\/users\/([A-Za-z_0-9]+)\/read\/(\d+).html(\?thread=(\d+))?/),
 			params = {
 				'journal': tmp [1],
 				'ditemid': tmp [2],
-				'parenttalkid': tmp [4] || null,
+				'parenttalkid': parseInt (tmp [4] / 256) || null,
+				'replyto': tmp [4] || null,
 				'body': message
 			};
 
@@ -143,81 +146,111 @@ _.extend (module.exports.prototype, {
 			}, this));
 	},
 
-	//TODO:: get profile
+	getContentRequest: function (options) {
+		var http = require('http'),
+			promise = Promises.promise();
+
+		var request = http.request(options, function (res) {
+		    var data = '';
+		   
+		    res.on ('data', function (chunk) {
+		        data += chunk;
+		    });
+
+		    res.on ('end', function () {
+		        promise.fulfill (data);
+		    });
+		});
+
+		request.on('error', function (e) {
+			promise.reject (e.message);
+		});
+
+		request.end();
+
+		return promise;
+	},
+
 	getProfile: function (url) {
-		var tmp = url.match(/\/users\/([A-Za-z_0-9]+)\/profile$/),
-			journal = tmp [1];
+		var self = this,
+			tmp = url.match(/\/users\/([A-Za-z_0-9]+)\/profile$/),
+			options = {
+				host: tmp [1] + '.livejournal.com',
+				path: '/profile'
+			};
 
-
-		var profileRequest = function (journal) {
-			var http = require('http'),
-				promise = Promises.promise();
-
-			var request = http.request({host: journal + '.livejournal.com', path: '/profile'}, function (res) {
-			    var data = '';
-			   
-			    res.on ('data', function (chunk) {
-			        data += chunk;
-			    });
-
-			    res.on ('end', function () {
-			        promise.fulfill (data);
-			    });
-			});
-
-			request.on('error', function (e) {
-				promise.reject (e.message);
-			});
-
-			request.end();
-
-			return promise;
-		};
-			
-
-		return profileRequest (journal)
+		return this.getContentRequest (options)
 			.then (function (body) {
-				var DOMParser = require('xmldom').DOMParser;
-				var doc = (new DOMParser()).parseFromString(body, "text/xml");
+				var $ = cheerio.load (body);
 
-				return doc.getElementsByClassName('b-details-journal-title') [0].innerText;
+				return {
+					'url': url,
+					'fullname': $ ('dl.b-profile-userinfo').first().find('dt:contains("Имя:") +').text() || $ ('h1.b-details-journal-title').text(),
+					'avatar': $ ('.b-profile-userpic img').attr('src'),
+					'username': $ ('.b-details-journal-ljuser .i-ljuser-username').text(),
+					'city': $ ('dl.b-profile-userinfo').first().find('.locality').text() || null,
+					'site': $ ('dl.b-profile-userinfo').first().find('dt:contains("Сайт:") +').find('a').attr('href') || null,
+					'email': $ ('dl.b-profile-userinfo').first().find('.b-contacts-mail').text() || null,
+					'facebook': $ ('dl.b-profile-userinfo').first().find('.b-contacts-facebook').text() || null,
+					'twitter': $ ('dl.b-profile-userinfo').first().find('.b-contacts-twitter').text() || null,
+					'vk': $ ('dl.b-profile-userinfo').first().find('.b-contacts-vk').text() || null,
+					'ljtalk': $ ('dl.b-profile-userinfo').first().find('.b-contacts-ljtalk').text() || null,
+					'icq': $ ('dl.b-profile-userinfo').first().find('.b-contacts-icq').text() || null,
+					'google': $ ('dl.b-profile-userinfo').first().find('.b-contacts-google').text() || null,
+					'skype': $ ('dl.b-profile-userinfo').first().find('.b-contacts-skype').text() || null
+
+					//'birth-date': $ ('dl.b-profile-userinfo').first().find('dt:contains("Дата рождения:") +').text() ||, //TODO: date parse
+				};
 			})
 			.then (function (entry) {
-				console.log ('sssss', entry);
-				return null;
 				return Promises.when (self.entry (entry, 'profile'));
 			});
 	},
 
 	//TODO: getComment
-	// npm install cheerio
-	// var data = JSON.parse ($ ('script#comments_json').text ())
+	// 
 	getComment: function (url) {
-		return null;
+		var self = this,
+			tmp = url.match(/\/users\/([A-Za-z_0-9]+)\/read\/(\d+).html\?thread=(\d+)/),
+			journal = tmp [1],
+			postId = tmp [2],
+			commentId = tmp [3];
 
-		var tmp = url.match(/\/users\/([A-Za-z_0-9]+)\/read\/(\d+).html\?thread=(\d+)/),
-			params = {
-				'journal': tmp [1],
-				'ditemid': tmp [2],
-				'post': tmp [3],
-				'selecttype': 'one'
-			};
+		var	options = {
+			host: journal + '.livejournal.com',
+			path: '/' + postId + '.html?thread=' + commentId
+		};
 
-		return this.get ('getevents', params)
-			.then(_.bind(function (result) {
-				if (result.message) {
-					throw new Error (result.message);
-				}
+		return this.getContentRequest (options)
+			.then (function (body) {
+				var $ = cheerio.load (body),
+					data = JSON.parse ($ ('script#comments_json').text ()),
+					ancestor = self.settings.base + '/users/' + journal + '/read/' + postId + '.html';
 
-				var entry = result.events [0];
-				entry.postername = params.journal;
+				var entry = _.find (data, function (item) {
+					return item.dtalkid == commentId;
+				});
 
-				return Promises.all ([
-					this.entry (entry, 'post'),
-					this.getComments (entry, 'comment')
-				]);
+				var parent = _.find (data, function (item) {
+					return item.dtalkid = entry.parent;
+				});
 
-			}, this));
+				if (parent)
+					ancestor += '?thread=' + parent.dtalkid;
+
+				return {
+					'url': url,
+					'ancestor': ancestor,
+					'postername': entry.dname,
+					'subject': null,
+					'body': entry.article,
+					'datepostunix': entry.ctime_ts,
+					'reply_count': 0
+				};
+			})
+			.then (function (entry) {
+				return Promises.when (self.entry (entry, 'comment'));
+			});
 	},
 
 	getComments: function (parent) {
@@ -263,8 +296,6 @@ _.extend (module.exports.prototype, {
 
 	getBlogPosts: function (url) {
 
-		return this.reply ('http://www.livejournal.com/users/frostmid/read/1122.html', 'Привет', '123');
-		
 		var tmp = url.match(/\/users\/([A-Za-z_0-9]+)$/),
 			params = {
 				'journal': tmp [1],
