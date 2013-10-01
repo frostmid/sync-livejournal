@@ -137,9 +137,9 @@ function livejournal (slave, task, preEmit) {
 			return livejournal (this, task).getComment (task.url);
 		} else if(task.url.match(/(\d+).html$/)) { //get Post
 			return livejournal (this, task).getPost (task.url);
-		} else if (task.url.match(/users\/([A-Za-z_0-9]+)(|\/)$/)) { //get getBlogPosts
+		} else if (task.url.match(/users\/([A-Za-z_0-9-]+)(|\/)$/)) { //get getBlogPosts
 			return livejournal (this, task).getBlogPosts (task.url);
-		} else if (task.url.match(/users\/([A-Za-z_0-9]+)\/profile/)) { //get Profile
+		} else if (task.url.match(/users\/([A-Za-z_0-9-]+)\/profile/)) { //get Profile
 			return livejournal (this, task).getProfile (task.url);
 		} else {
 			throw new Error ('None exist explain for url: ' + task.url);

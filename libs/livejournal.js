@@ -86,7 +86,7 @@ _.extend (module.exports.prototype, {
 	},
 
 	getPost: function (url) {
-		var tmp = url.match(/\/users\/([A-Za-z_0-9]+)\/read\/(\d+).html$/),
+		var tmp = url.match(/\/users\/([A-Za-z_0-9-]+)\/read\/(\d+).html$/),
 			params = {
 				'journal': tmp [1],
 				'ditemid': tmp [2],
@@ -112,7 +112,7 @@ _.extend (module.exports.prototype, {
 
 	reply: function (url, message, issue) {
 		var self = this,
-			tmp = url.match(/\/users\/([A-Za-z_0-9]+)\/read\/(\d+).html(\?thread=(\d+))?/),
+			tmp = url.match(/\/users\/([A-Za-z_0-9-]+)\/read\/(\d+).html(\?thread=(\d+))?/),
 			params = {
 				'journal': tmp [1],
 				'ditemid': tmp [2],
@@ -148,7 +148,7 @@ _.extend (module.exports.prototype, {
 
 	getProfile: function (url) {
 		var self = this,
-			tmp = url.match(/\/users\/([A-Za-z_0-9]+)\/profile$/);
+			tmp = url.match(/\/users\/([A-Za-z_0-9-]+)\/profile$/);
 
 		return request ({url: 'http://' + tmp [1] + '.livejournal.com/profile'})
 			.then (function (body) {
@@ -180,7 +180,7 @@ _.extend (module.exports.prototype, {
 
 	getComment: function (url) {
 		var self = this,
-			tmp = url.match(/\/users\/([A-Za-z_0-9]+)\/read\/(\d+).html\?thread=(\d+)/),
+			tmp = url.match(/\/users\/([A-Za-z_0-9-]+)\/read\/(\d+).html\?thread=(\d+)/),
 			journal = tmp [1],
 			postId = tmp [2],
 			commentId = tmp [3],
@@ -221,7 +221,7 @@ _.extend (module.exports.prototype, {
 	getComments: function (parent) {
 		var self = this,
 			parentURL = this.normalizeURL (parent.url),
-			tmp = parentURL.match(/\/users\/([A-Za-z_0-9]+)\/read\/(\d+).html$/),
+			tmp = parentURL.match(/\/users\/([A-Za-z_0-9-]+)\/read\/(\d+).html$/),
 			params = {
 				'journal': tmp [1],
 				'ditemid': tmp [2],
@@ -263,7 +263,7 @@ _.extend (module.exports.prototype, {
 
 		return this.getComments ({url: 'http://www.livejournal.com/users/ibigdan/read/13788379.html'});
 
-		var tmp = url.match(/\/users\/([A-Za-z_0-9]+)$/),
+		var tmp = url.match(/\/users\/([A-Za-z_0-9-]+)$/),
 			params = {
 				'journal': tmp [1],
 				'lastsync': moment (this.settings.scrapeStart).format("YYYY-MM-DD HH:mm:ss"),
