@@ -1,9 +1,10 @@
 var	_ = require ('lodash'),
 	Promises = require ('vow'),
-	request = require ('fos-request'),
 	xmlrpc = require('xmlrpc'),
 	moment = require('moment'),
-	cheerio = require('cheerio');
+	cheerio = require('cheerio'),
+	rateLimit = require ('fun-rate-limit'),
+	request = rateLimit.promise (require ('fos-request'), 200);
 
 
 module.exports = function LiveJournal (settings) {
@@ -43,7 +44,7 @@ _.extend (module.exports.prototype, {
 		return url;
 	},
 
-	request: function (method, params) {
+	xmlRPCRequest: function (method, params) {
 		var promise = Promises.promise();
 
 		var LJ = xmlrpc.createClient({
@@ -72,12 +73,12 @@ _.extend (module.exports.prototype, {
 	get: function (method, params) {
 		params = this._appendToken (params);
 		params.ver = 1;
-		return this.request (method, params);
+		return this.xmlRPCRequest (method, params);
 	},
 
 	post: function (endpoint, data) {
 		var url = this._appendToken (this.settings.base + endpoint);
-		return this.request ({
+		return this.xmlRPCRequest ({
 			url: url,
 			method: 'post',
 			form: data
@@ -85,7 +86,6 @@ _.extend (module.exports.prototype, {
 	},
 
 	getPost: function (url) {
-
 		var tmp = url.match(/\/users\/([A-Za-z_0-9]+)\/read\/(\d+).html$/),
 			params = {
 				'journal': tmp [1],
@@ -146,40 +146,11 @@ _.extend (module.exports.prototype, {
 			}, this));
 	},
 
-	getContentRequest: function (options) {
-		var http = require('http'),
-			promise = Promises.promise();
-
-		var request = http.request(options, function (res) {
-		    var data = '';
-		   
-		    res.on ('data', function (chunk) {
-		        data += chunk;
-		    });
-
-		    res.on ('end', function () {
-		        promise.fulfill (data);
-		    });
-		});
-
-		request.on('error', function (e) {
-			promise.reject (e.message);
-		});
-
-		request.end();
-
-		return promise;
-	},
-
 	getProfile: function (url) {
 		var self = this,
-			tmp = url.match(/\/users\/([A-Za-z_0-9]+)\/profile$/),
-			options = {
-				host: tmp [1] + '.livejournal.com',
-				path: '/profile'
-			};
+			tmp = url.match(/\/users\/([A-Za-z_0-9]+)\/profile$/);
 
-		return this.getContentRequest (options)
+		return request ({url: 'http://' + tmp [1] + '.livejournal.com/profile'})
 			.then (function (body) {
 				var $ = cheerio.load (body);
 
@@ -207,21 +178,15 @@ _.extend (module.exports.prototype, {
 			});
 	},
 
-	//TODO: getComment
-	// 
 	getComment: function (url) {
 		var self = this,
 			tmp = url.match(/\/users\/([A-Za-z_0-9]+)\/read\/(\d+).html\?thread=(\d+)/),
 			journal = tmp [1],
 			postId = tmp [2],
-			commentId = tmp [3];
+			commentId = tmp [3],
+			requestUrl = 'http://' + journal + '.livejournal.com/' + postId + '.html?thread=' + commentId;
 
-		var	options = {
-			host: journal + '.livejournal.com',
-			path: '/' + postId + '.html?thread=' + commentId
-		};
-
-		return this.getContentRequest (options)
+		return request ({url: requestUrl})
 			.then (function (body) {
 				var $ = cheerio.load (body),
 					data = JSON.parse ($ ('script#comments_json').text ()),
@@ -296,6 +261,8 @@ _.extend (module.exports.prototype, {
 
 	getBlogPosts: function (url) {
 
+		return this.getComments ({url: 'http://www.livejournal.com/users/ibigdan/read/13788379.html'});
+
 		var tmp = url.match(/\/users\/([A-Za-z_0-9]+)$/),
 			params = {
 				'journal': tmp [1],
@@ -319,7 +286,7 @@ _.extend (module.exports.prototype, {
 		var self = this;
 
 		var fetchMore = _.bind (function (method, params) {
-			return this.request (method, params)
+			return this.xmlRPCRequest (method, params)
 				.then (process);
 		}, this);
 
@@ -414,7 +381,7 @@ _.extend (module.exports.prototype, {
 	resolveToken: function () {
 		var self = this;
 
-		return this.request ('login', {
+		return this.xmlRPCRequest ('login', {
 			'username': this.settings.username,
 			'password': this.settings.password,
 			'auth_method': 'clear'

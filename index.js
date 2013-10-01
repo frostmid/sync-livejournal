@@ -5,11 +5,7 @@ var	_ = require ('lodash'),
 	SocketIO = require ('socket.io-client'),
 	Slave = require ('fos-sync-slave'),
 	LiveJournal = require ('./libs/livejournal'),
-	url = process.argv [2] || 
-		//'http://127.0.0.1:8001'
-		'http://192.168.1.202:8001'
-		//'http://192.168.104.254:8001'
-	;
+	url = process.argv [2] || 'http://127.0.0.1:8001';
 
 function normalizeURL (url) {
 	var tmp = url.match(/http:\/\/(.+).livejournal.com(\/?(.+))?/),
@@ -84,6 +80,7 @@ var parse = {
 			'metrics': {
 				'comments': entry.reply_count || 0
 			}
+			//TODO: show-url
 		};
 	},
 
@@ -105,8 +102,6 @@ function livejournal (slave, task, preEmit) {
 		parse: parse
 	})
 };
-
-// http://www.livejournal.com/users/navalny/read/863386.html
 
 (new Slave ({
 	title: 'livejournal api',
@@ -163,9 +158,3 @@ function livejournal (slave, task, preEmit) {
 	})
 
 	.connect (SocketIO, url);
-
-
-	//urn:fos:sync:entry-type/62c4870f3c8a6aee0dd7e88e9e5242dd блог LJ
-	//urn:fos:sync:entry-type/62c4870f3c8a6aee0dd7e88e9e532848 пост LJ
-	//urn:fos:sync:entry-type/62c4870f3c8a6aee0dd7e88e9e54463b комментарий LJ
-	//urn:fos:sync:entry-type/62c4870f3c8a6aee0dd7e88e9e55958d профиль LJ
