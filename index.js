@@ -39,7 +39,7 @@ function normalizeURL (url, ljStyle) {
 var parse = {
 	'profile': function (entry) {
 		return {
-			'url': 'http://www.livejournal.com/users/' + entry.username,
+			'url': 'http://www.livejournal.com/users/' + entry.username + '/profile',
 			'entry-type': 'urn:fos:sync:entry-type/62c4870f3c8a6aee0dd7e88e9e55958d',
 			'first-name': entry.fullname,
 			'nickname': entry.username,

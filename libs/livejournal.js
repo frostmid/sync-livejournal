@@ -91,6 +91,10 @@ _.extend (module.exports.prototype, {
 					throw new Error (result.message);
 				}
 
+				if (!result.events.length) {
+					throw new Error ('Non exist post ' + url);
+				}
+
 				var entry = result.events [0];
 				entry.postername = params.journal;
 
@@ -178,7 +182,9 @@ _.extend (module.exports.prototype, {
 			'journal': tmp [1],
 			'ditemid': tmp [2],
 			'dtalkid': tmp [3],
-			'expand_strategy': 'mobile_thread'
+			'selecttype': 'one',
+			'expand_strategy': 'mobile_thread',
+			'page_size': 100
 		};
 
 		return this.get ('getcomments', params)
@@ -209,6 +215,7 @@ _.extend (module.exports.prototype, {
 			params = {
 				'journal': tmp [1],
 				'ditemid': tmp [2],
+				'selecttype': null,
 				'expand_strategy': 'mobile_thread',
 				'page_size': 100
 			};
