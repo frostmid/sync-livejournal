@@ -23,20 +23,12 @@ _.extend (module.exports.prototype, {
 	},
 
 	normalizeURL: function (url) {
-		var tmp = url.match(/http:\/\/(.+).livejournal.com(\/?(.+))?/),
+		var tmp = url.match(/http:\/\/(.+).livejournal.com\/?(.+)?/),
 			subDomain = tmp [1],
-			queryUrl = tmp [3];
+			queryUrl = tmp [2];
 
 		if (subDomain != 'www') {
-			url = 'http://www.livejournal.com/users/' + subDomain + '/';
-			
-	      	if (queryUrl) {
-				if (queryUrl.match(/(\d+).html/)) {
-					url += 'read/' + queryUrl;
-				} else {
-					url += queryUrl;
-				}
-	        }
+			url = 'http://www.livejournal.com/users/' + subDomain + '/' + (queryUrl || '');
 		}
 
 		url = url.replace(/&?#.*$/, '');
@@ -86,7 +78,7 @@ _.extend (module.exports.prototype, {
 	},
 
 	getPost: function (url) {
-		var tmp = url.match(/\/users\/([A-Za-z_0-9-]+)\/read\/(\d+).html$/),
+		var tmp = url.match(/\/users\/([A-Za-z_0-9-]+)\/(\d+).html$/),
 			params = {
 				'journal': tmp [1],
 				'ditemid': tmp [2],
@@ -112,7 +104,7 @@ _.extend (module.exports.prototype, {
 
 	reply: function (url, message, issue) {
 		var self = this,
-			tmp = url.match(/\/users\/([A-Za-z_0-9-]+)\/read\/(\d+).html(\?thread=(\d+))?/),
+			tmp = url.match(/\/users\/([A-Za-z_0-9-]+)\/(\d+).html(\?thread=(\d+))?/),
 			params = {
 				'journal': tmp [1],
 				'ditemid': tmp [2],
@@ -180,52 +172,43 @@ _.extend (module.exports.prototype, {
 
 	getComment: function (url) {
 		var self = this,
-			tmp = url.match(/\/users\/([A-Za-z_0-9-]+)\/read\/(\d+).html\?thread=(\d+)/),
-			journal = tmp [1],
-			postId = tmp [2],
-			commentId = tmp [3],
-			requestUrl = 'http://' + journal + '.livejournal.com/' + postId + '.html?thread=' + commentId;
+			tmp = url.match(/\/users\/([A-Za-z_0-9-]+)\/(\d+).html\?thread=(\d+)/);
 
-		return request ({url: requestUrl})
-			.then (function (body) {
-				var $ = cheerio.load (body),
-					data = JSON.parse ($ ('script#comments_json').text ()),
-					ancestor = self.settings.base + '/users/' + journal + '/read/' + postId + '.html';
+		var params = {
+			'journal': tmp [1],
+			'ditemid': tmp [2],
+			'dtalkid': tmp [3],
+			'expand_strategy': 'mobile_thread'
+		};
 
-				var entry = _.find (data, function (item) {
-					return item.dtalkid == commentId;
-				});
+		return this.get ('getcomments', params)
+			.then(function (result) {
+				if (result.message) {
+					throw new Error (result.message);
+				}
 
-				var parent = _.find (data, function (item) {
-					return item.dtalkid = entry.parent;
-				});
+				if (!result.comments.length) {
+					throw new Error ('Non exist comment ' + url);
+				}
 
-				if (parent)
-					ancestor += '?thread=' + parent.dtalkid;
+				var entry = result.comments [0];
+				entry.children = null;
+				entry.url = url;
 
-				return {
-					'url': url,
-					'ancestor': ancestor,
-					'postername': entry.dname,
-					'subject': null,
-					'body': entry.article,
-					'datepostunix': entry.ctime_ts,
-					'reply_count': 0
-				};
-			})
-			.then (function (entry) {
+				entry.ancestor = self.settings.base + '/users/' + tmp [1] + '/' + tmp [2] + '.html' +
+					(entry.parentdtalkid ? '?thread=' + entry.parentdtalkid : '');
+
 				return Promises.when (self.entry (entry, 'comment'));
-			});
+			});			
 	},
 
 	getComments: function (parent) {
 		var self = this,
 			parentURL = this.normalizeURL (parent.url),
-			tmp = parentURL.match(/\/users\/([A-Za-z_0-9-]+)\/read\/(\d+).html$/),
+			tmp = parentURL.match(/\/users\/([A-Za-z_0-9-]+)\/(\d+).html$/),
 			params = {
 				'journal': tmp [1],
 				'ditemid': tmp [2],
-				'selecttype': null,
 				'expand_strategy': 'mobile_thread',
 				'page_size': 100
 			};
@@ -260,9 +243,6 @@ _.extend (module.exports.prototype, {
 	},
 
 	getBlogPosts: function (url) {
-
-		return this.getComments ({url: 'http://www.livejournal.com/users/ibigdan/read/13788379.html'});
-
 		var tmp = url.match(/\/users\/([A-Za-z_0-9-]+)$/),
 			params = {
 				'journal': tmp [1],

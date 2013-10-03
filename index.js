@@ -7,26 +7,33 @@ var	_ = require ('lodash'),
 	LiveJournal = require ('./libs/livejournal'),
 	url = process.argv [2] || 'http://127.0.0.1:8001';
 
-function normalizeURL (url) {
-	var tmp = url.match(/http:\/\/(.+).livejournal.com(\/?(.+))?/),
+function normalizeURL (url, ljStyle) {
+	var tmp = url.match (/http:\/\/(.+).livejournal.com\/?(.+)?/),
 		subDomain = tmp [1],
-		queryUrl = tmp [3];
+		queryUrl = tmp [2],
+		resultUrl = url;
 
-	if (subDomain != 'www') {
-		url = 'http://www.livejournal.com/users/' + subDomain + '/';
-		
-      	if (queryUrl) {
-			if (queryUrl.match(/(\d+).html/)) {
-				url += 'read/' + queryUrl;
-			} else {
-				url += queryUrl;
-			}
-        }
+	if (ljStyle) {
+		if (subDomain == 'www') {
+			var tmp = url.match (/users\/([A-Za-z0-9-_]+)(?:\/(\d+).html(?:\?thread=(\d+))?)?/),
+				journal = tmp [1],
+				post = tmp [2],
+				thread = tmp [3];
+
+			resultUrl = 'http://' + journal + '.livejournal.com/';
+
+			if (post) resultUrl += post + '.html';
+			if (thread) resultUrl += '?thread=' + thread + '#t' + thread;
+		}
+	} else {
+		if (subDomain != 'www') {
+			resultUrl = 'http://www.livejournal.com/users/' + subDomain + '/' + (queryUrl || '');
+		}
+
+		resultUrl = resultUrl.replace(/&?#.*$/, '');
 	}
 
-	url = url.replace(/&?#.*$/, '');
-
-	return url;
+	return resultUrl;
 };
 
 var parse = {
@@ -48,7 +55,8 @@ var parse = {
 			'ljtalk': entry.ljtalk || null,
 			'icq': entry.icq || null,
 			'google': entry.google || null,
-			'skype': entry.skype || null
+			'skype': entry.skype || null,
+			'show-url': normalizeURL (entry.url, true)
 		};
 	},
 
@@ -64,7 +72,7 @@ var parse = {
 			'metrics': {
 				'comments': entry.reply_count || 0
 			},
-			'show-url': entry.url
+			'show-url': normalizeURL (entry.url, true)
 		};
 	},
 
@@ -79,8 +87,8 @@ var parse = {
 			'created_at': entry.datepostunix,
 			'metrics': {
 				'comments': entry.reply_count || 0
-			}
-			//TODO: show-url
+			},
+			'show-url': normalizeURL (entry.url, true)
 		};
 	},
 
@@ -137,9 +145,9 @@ function livejournal (slave, task, preEmit) {
 			return livejournal (this, task).getComment (task.url);
 		} else if(task.url.match(/(\d+).html$/)) { //get Post
 			return livejournal (this, task).getPost (task.url);
-		} else if (task.url.match(/users\/([A-Za-z_0-9-]+)(|\/)$/)) { //get getBlogPosts
+		} else if (task.url.match(/users\/([A-Za-z0-9-_]+)(|\/)$/)) { //get getBlogPosts
 			return livejournal (this, task).getBlogPosts (task.url);
-		} else if (task.url.match(/users\/([A-Za-z_0-9-]+)\/profile/)) { //get Profile
+		} else if (task.url.match(/users\/([A-Za-z0-9-_]+)\/profile/)) { //get Profile
 			return livejournal (this, task).getProfile (task.url);
 		} else {
 			throw new Error ('None exist explain for url: ' + task.url);
