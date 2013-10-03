@@ -113,10 +113,10 @@ _.extend (module.exports.prototype, {
 				var $ = cheerio.load (body);
 
 				return {
-					'url': url,
+					'username': tmp [1],
 					'fullname': $ ('dl.b-profile-userinfo').first().find('dt:contains("Имя:") +').text() || $ ('h1.b-details-journal-title').text(),
 					'avatar': $ ('.b-profile-userpic img').attr('src'),
-					'username': $ ('.b-details-journal-ljuser .i-ljuser-username').text(),
+					'nickname': $ ('.b-details-journal-ljuser .i-ljuser-username').text(),
 					'city': $ ('dl.b-profile-userinfo').first().find('.locality').text() || null,
 					'site': $ ('dl.b-profile-userinfo').first().find('dt:contains("Сайт:") +').find('a').attr('href') || null,
 					'email': $ ('dl.b-profile-userinfo').first().find('.b-contacts-mail').text() || null,
