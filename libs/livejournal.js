@@ -68,44 +68,6 @@ _.extend (module.exports.prototype, {
 		return this.xmlRPCRequest (method, params);
 	},
 
-	post: function (endpoint, data) {
-		var url = this._appendToken (this.settings.base + endpoint);
-		return this.xmlRPCRequest ({
-			url: url,
-			method: 'post',
-			form: data
-		});	
-	},
-
-	getPost: function (url) {
-		var tmp = url.match(/\/users\/([A-Za-z_0-9-]+)\/(\d+).html$/),
-			params = {
-				'journal': tmp [1],
-				'ditemid': tmp [2],
-				'selecttype': 'one'
-			};
-
-		return this.get ('getevents', params)
-			.then(_.bind(function (result) {
-				if (result.message) {
-					throw new Error (result.message);
-				}
-
-				if (!result.events.length) {
-					throw new Error ('Non exist post ' + url);
-				}
-
-				var entry = result.events [0];
-				entry.postername = params.journal;
-
-				return Promises.all ([
-					this.entry (entry, 'post'),
-					this.getComments (entry, 'comment')
-				]);
-
-			}, this));
-	},
-
 	reply: function (url, message, issue) {
 		var self = this,
 			tmp = url.match(/\/users\/([A-Za-z_0-9-]+)\/(\d+).html(\?thread=(\d+))?/),
@@ -247,6 +209,35 @@ _.extend (module.exports.prototype, {
 				self.entry (item, 'comment');
 			});
 		});
+	},
+
+	getPost: function (url) {
+		var tmp = url.match(/\/users\/([A-Za-z_0-9-]+)\/(\d+).html$/),
+			params = {
+				'journal': tmp [1],
+				'ditemid': tmp [2],
+				'selecttype': 'one'
+			};
+
+		return this.get ('getevents', params)
+			.then(_.bind(function (result) {
+				if (result.message) {
+					throw new Error (result.message);
+				}
+
+				if (!result.events.length) {
+					throw new Error ('Non exist post ' + url);
+				}
+
+				var entry = result.events [0];
+				entry.postername = params.journal;
+
+				return Promises.all ([
+					this.entry (entry, 'post'),
+					this.getComments (entry, 'comment')
+				]);
+
+			}, this));
 	},
 
 	getBlogPosts: function (url) {
