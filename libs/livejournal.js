@@ -369,7 +369,7 @@ _.extend (module.exports.prototype, {
 				throw new Error (entry.message);
 			}
 
-			return Promises.when (self.entry (entry, 'profile'));
+			return self.getProfile (this.settings.base + '/users/' + this.settings.username + '/profile');
 		});
 	}
 });
