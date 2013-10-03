@@ -56,7 +56,7 @@ var parse = {
 			'icq': entry.icq || null,
 			'google': entry.google || null,
 			'skype': entry.skype || null,
-			'show-url': normalizeURL (entry.url, true)
+			'show-url': 'http://' + entry.username + '.livejournal.com'
 		};
 	},
 
