@@ -37,6 +37,7 @@ _.extend (module.exports.prototype, {
 	},
 
 	xmlRPCRequest: function (method, params) {
+
 		var promise = Promises.promise();
 
 		var LJ = xmlrpc.createClient({
@@ -45,19 +46,21 @@ _.extend (module.exports.prototype, {
 			port: 80
 		});
 
-		LJ.Deserializer.prototype.endBase64 = function(data) {
-			var buffer = new Buffer(data, 'base64');
-			this.push(String(buffer));
+		LJ.Deserializer.prototype.endBase64 = function (data) {
+			var buffer = new Buffer (data, 'base64');
+			this.push (String (buffer));
 			this.value = false;
 		};
 
-		LJ.methodCall('LJ.XMLRPC.' + method, [params], function(error, results) {
-			if (error) {
-				return promise.reject (error);
-			}
+		rateLimit.promise((function (method, params, promise) {
+			LJ.methodCall('LJ.XMLRPC.' + method, [params], function(error, results) {
+				if (error) {
+					return promise.reject (error);
+				}
 
-			return promise.fulfill (results);
-		});
+				return promise.fulfill (results);
+			});
+		}) (method, params, promise), 200);
 
 		return promise;
 	},
