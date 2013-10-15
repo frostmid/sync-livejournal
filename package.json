@@ -15,6 +15,7 @@
 		"moment": "*",
 		"socket.io-client": "*",
 		"fun-rate-limit": "*",
+		"xml2js": "*",
 		"fos-sync-slave": "git://github.com/lyxsus/fos-sync-slave.git",
 		"fos-request": "git://github.com/lyxsus/fos-request.git",
 		"xmlrpc": "git://github.com/agentcooper/node-xmlrpc.git",
