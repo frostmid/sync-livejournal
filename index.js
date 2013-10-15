@@ -151,8 +151,6 @@ function livejournal (slave, task, preEmit) {
 			return livejournal (this, task).getComment (task.url);
 		} else if(task.url.match(/(\d+).html$/)) { //get Post
 			return livejournal (this, task).getPost (task.url);
-		} else if (task.url.match(/users\/([A-Za-z0-9-_]+)(|\/)$/)) { //get getBlogPosts
-			return livejournal (this, task).getBlogPosts (task.url);
 		} else if (task.url.match(/users\/([A-Za-z0-9-_]+)\/profile/)) { //get Profile
 			return livejournal (this, task).getProfile (task.url);
 		} else {
