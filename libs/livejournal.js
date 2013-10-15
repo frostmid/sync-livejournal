@@ -114,25 +114,27 @@ _.extend (module.exports.prototype, {
 
 		return request ({url: 'http://' + tmp [1] + '.livejournal.com/profile'})
 			.then (function (body) {
-				var $ = cheerio.load (body);
+				var $ = cheerio.load (body),
+					$user_info = $ ('dl.b-profile-userinfo').first();
 
 				return {
 					'username': tmp [1],
-					'fullname': $ ('dl.b-profile-userinfo').first().find('dt:contains("Имя:") +').text() || $ ('h1.b-details-journal-title').text(),
+					'fullname':$user_info.find('dt:contains("Имя:") +').text() || $ ('h1.b-details-journal-title').text(),
 					'avatar': $ ('.b-profile-userpic img').attr('src'),
 					'nickname': $ ('.b-details-journal-ljuser .i-ljuser-username').text(),
-					'city': $ ('dl.b-profile-userinfo').first().find('.locality').text() || null,
-					'site': $ ('dl.b-profile-userinfo').first().find('dt:contains("Сайт:") +').find('a').attr('href') || null,
-					'email': $ ('dl.b-profile-userinfo').first().find('.b-contacts-mail').text() || null,
-					'facebook': $ ('dl.b-profile-userinfo').first().find('.b-contacts-facebook').text() || null,
-					'twitter': $ ('dl.b-profile-userinfo').first().find('.b-contacts-twitter').text() || null,
-					'vk': $ ('dl.b-profile-userinfo').first().find('.b-contacts-vk').text() || null,
-					'ljtalk': $ ('dl.b-profile-userinfo').first().find('.b-contacts-ljtalk').text() || null,
-					'icq': $ ('dl.b-profile-userinfo').first().find('.b-contacts-icq').text() || null,
-					'google': $ ('dl.b-profile-userinfo').first().find('.b-contacts-google').text() || null,
-					'skype': $ ('dl.b-profile-userinfo').first().find('.b-contacts-skype').text() || null
-
-					//'birth-date': $ ('dl.b-profile-userinfo').first().find('dt:contains("Дата рождения:") +').text() ||, //TODO: date parse
+					'city': $user_info.find('.locality').text() || null,
+					'site': $user_info.find('dt:contains("Сайт:") +').find('a').attr('href') || null,
+					'alias': _.compact ([
+						$user_info.find('.b-contacts-mail').text() || null,
+						$user_info.find('.b-contacts-facebook').text() || null,
+						$user_info.find('.b-contacts-twitter').text() || null,
+						$user_info.find('.b-contacts-vk').text() || null,
+						$user_info.find('.b-contacts-ljtalk').text() || null,
+						$user_info.find('.b-contacts-icq').text() || null,
+						$user_info.find('.b-contacts-google').text() || null,
+						$user_info.find('.b-contacts-skype').text() || null
+					])
+					//'birth-date':$user_info.find('dt:contains("Дата рождения:") +').text() ||, //TODO: date parse
 				};
 			})
 			.then (function (entry) {
