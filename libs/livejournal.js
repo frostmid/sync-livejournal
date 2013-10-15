@@ -245,8 +245,6 @@ _.extend (module.exports.prototype, {
 	},
 
 	getBlogPosts: function (url) {
-		return this.search ('http://www.livejournal.com/search/?q=%D1%81%D0%B8%D0%B0%D0%B1&ie=utf-8&area=default');
-
 		var tmp = url.match(/\/users\/([A-Za-z_0-9-]+)$/),
 			params = {
 				'journal': tmp [1],
@@ -278,36 +276,30 @@ _.extend (module.exports.prototype, {
 		return request ({url: 'http://blogs.yandex.ru/search.rss?server=livejournal.com&ft=all&text=' + needle})
 			.then (function (body) {
 				var promise = Promises.promise();
-				console.log ('staaaaaaaaaaaaaaaaaaaaart');
 
 				xmlParser.parseString (body, function (error, result) {
-					console.log ('parseeeeeeeeeeeeeeeeeed');
-					Promises.all([
-						_.map (result['rss'].channel [0] .item, function (item) {
-							var item_url = self.normalizeURL (item.link [0]);
+					var promises = [];
 
-							console.log ('hhhhhhhhhhhhhhhhh', item);
+					_.each (result['rss'].channel [0] .item, function (item) {
+						var item_url = self.normalizeURL (item.link [0]);
 
-							if (item_url.match(/(\d+).html\?thread=(\d+)/)) { //get Comment
-								console.log ('comeeeeeeeeeeeeeeeeeent');
-								return self.getComment (item_url);
-							} else if(item_url.match(/(\d+).html$/)) { //get Post
-								console.log ('poooooooooooooooooost');
-								return self.getPost (item_url);
-							} else if (item_url.match(/users\/([A-Za-z0-9-_]+)\/profile/)) { //get Profile
-								console.log ('profiiiiiiiiiiiiiiiile');
-								return self.getProfile (item_url);
-							} else {
-								console.log ('errrrrrrrrrrrrrrrrrror');
-								promise.reject ('Non inmplementation for: ' + item_url);
-							}
-						})
-					]).then (function (result) {
-						console.log ('resuuuuuuuuuuuuuuuuult');
-						promise.fulfill (result);
-					}).fail (function (error) {
-						throw new Error (error);
+						if (item_url.match(/(\d+).html\?thread=(\d+)/)) { //get Comment
+							promises.push (self.getComment (item_url));
+						} else if(item_url.match(/(\d+).html$/)) { //get Post
+							promises.push (self.getPost (item_url));
+						} else if (item_url.match(/users\/([A-Za-z0-9-_]+)\/profile/)) { //get Profile
+							promises.push (self.getProfile (item_url));
+						} else {
+							promise.reject ('Non inmplementation for: ' + item_url);
+						}
 					});
+
+					Promises.all(promises)
+						.then (function (result) {
+							promise.fulfill (result);
+						}).fail (function (error) {
+							throw new Error (error);
+						});
 				});
 
 				return promise;
