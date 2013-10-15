@@ -17,7 +17,6 @@
 		"fun-rate-limit": "*",
 		"fos-sync-slave": "git://github.com/lyxsus/fos-sync-slave.git",
 		"fos-request": "git://github.com/lyxsus/fos-request.git",
-		"node-livejournal": "git://github.com/agentcooper/node-livejournal.git",
 		"xmlrpc": "git://github.com/agentcooper/node-xmlrpc.git",
 		"cheerio": "*"
 	},

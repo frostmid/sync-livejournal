@@ -3,6 +3,7 @@ var	_ = require ('lodash'),
 	xmlrpc = require('xmlrpc'),
 	moment = require('moment'),
 	cheerio = require('cheerio'),
+	xmlParser = require('xml2js'),
 	rateLimit = require ('fun-rate-limit'),
 	request = rateLimit.promise (require ('fos-request'), 200);
 
@@ -36,7 +37,7 @@ _.extend (module.exports.prototype, {
 		return url;
 	},
 
-	xmlRPCRequest: function (method, params) {
+	xmlRPCRequest: function (method, params, path) {
 
 		var promise = Promises.promise();
 
@@ -261,6 +262,36 @@ _.extend (module.exports.prototype, {
 				this.getComments (entry, 'comment')
 			]);
 		}, this));
+	},
+
+	search: function (url) {
+		var self = this,
+			tmp = url.match (/(?:\&|\?)q=(.+)&/),
+			needle = tmp ? tmp [1] : null,
+			requestUrl = 'http://blogs.yandex.ru/search.rss?server=livejournal.com&ft=all&text=' + needle;
+
+		if (!needle) {
+			throw new Error ('Nothing to search');
+		}
+
+		return request ({url: 'http://blogs.yandex.ru/search.rss?server=livejournal.com&ft=all&text=' + needle})
+			.then (function (body) {
+				xmlParser.parseString (body, function (error, result) {
+					_.each (result['rss'].channel [0] .item, function (item) {
+						var item_url = self.normalizeURL (item.link [0]);
+
+						if (item_url.match(/(\d+).html\?thread=(\d+)/)) { //get Comment
+							return self.getComment (item_url);
+						} else if(item_url.match(/(\d+).html$/)) { //get Post
+							return self.getPost (item_url);
+						} else if (item_url.match(/users\/([A-Za-z0-9-_]+)\/profile/)) { //get Profile
+							return self.getProfile (item_url);
+						} else {
+							throw new Error ('Non inmplementation for: ' + item_url);
+						}
+					});
+				});
+			});
 	},
 
 	list: function (method, params, iterator) {

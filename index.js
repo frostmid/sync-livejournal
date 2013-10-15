@@ -141,9 +141,13 @@ function livejournal (slave, task, preEmit) {
 		return livejournal (this, task).reply (task.url, task.content, task.issue);
 	})
 
+	.use ('urn:fos:sync:feature/03226920354111e3b6ba45cb1adeb5b6', function search (task) {
+		return livejournal (this, task).search (task.url);
+	})
+
 	.use ('urn:fos:sync:feature/62c4870f3c8a6aee0dd7e88e9e54e708', function explain (task) {
 		
-		if(task.url.match(/(\d+).html\?thread=(\d+)/)) { //get Comment
+		if (task.url.match(/(\d+).html\?thread=(\d+)/)) { //get Comment
 			return livejournal (this, task).getComment (task.url);
 		} else if(task.url.match(/(\d+).html$/)) { //get Post
 			return livejournal (this, task).getPost (task.url);
