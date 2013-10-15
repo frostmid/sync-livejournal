@@ -48,14 +48,16 @@ var parse = {
 			'birth-date': entry['birth-date'] || null,
 			'city': entry.city || null,
 			'site': entry.site || null,
-			'email': entry.email || null,
-			'facebook': entry.facebook || null,
-			'twitter': entry.twitter || null,
-			'vk': entry.vk || null,
-			'ljtalk': entry.ljtalk || null,
-			'icq': entry.icq || null,
-			'google': entry.google || null,
-			'skype': entry.skype || null,
+			'alias': _.compact ([
+				entry.facebook,
+				entry.twitter,
+				entry.vk,
+				entry.ljtalk,
+				entry.icq,
+				entry.google,
+				entry.skype,
+				entry.email
+			]),
 			'show-url': 'http://' + entry.username + '.livejournal.com'
 		};
 	},
