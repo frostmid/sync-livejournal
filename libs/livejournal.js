@@ -245,6 +245,8 @@ _.extend (module.exports.prototype, {
 	},
 
 	getBlogPosts: function (url) {
+		return this.search ('http://www.livejournal.com/search/?q=%D1%81%D0%B8%D0%B0%D0%B1&ie=utf-8&area=default');
+
 		var tmp = url.match(/\/users\/([A-Za-z_0-9-]+)$/),
 			params = {
 				'journal': tmp [1],
