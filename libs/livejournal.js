@@ -290,7 +290,7 @@ _.extend (module.exports.prototype, {
 						} else if (item_url.match(/users\/([A-Za-z0-9-_]+)\/profile/)) { //get Profile
 							promises.push (self.getProfile (item_url));
 						} else {
-							return null;
+							throw new Error ('Non inplementation for: ' + item_url);
 						}
 					});
 
