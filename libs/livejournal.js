@@ -247,7 +247,7 @@ _.extend (module.exports.prototype, {
 	},
 
 	getBlogPosts: function (url) {
-		var tmp = url.match(/\/users\/([A-Za-z_0-9-]+)$/),
+		var tmp = url.match(/\/users\/([A-Za-z_0-9-]+)/),
 			params = {
 				'journal': tmp [1],
 				'lastsync': moment (this.settings.scrapeStart).format("YYYY-MM-DD HH:mm:ss"),
